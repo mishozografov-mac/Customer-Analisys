@@ -1,0 +1,5 @@
+{
+  "name": "AI Sales Targeter",
+  "description": "An intelligent client targeting system that uses Gemini and Google Search to research companies and match them with appropriate product groups from your catalog.",
+  "requestFramePermissions": []
+}
