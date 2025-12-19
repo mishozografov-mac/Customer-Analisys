@@ -15,35 +15,18 @@ export class GeminiService {
     ).join('\n');
 
     const prompt = `
-# ROLE
-You are a high-precision B2B Lead Researcher for "Zografa". 
-Your absolute priority is ACCURACY. Incorrect data is worse than no data.
-
-# TARGET ENTITY
-Name: "${companyName}"
-${vat ? `VAT/BULSTAT ID: "${vat}"` : 'VAT/BULSTAT: Not provided'}
-
-# ZERO HALLUCINATION PROTOCOL
-1. **VAT MATCHING**: ${vat ? `The VAT/BULSTAT number "${vat}" is a unique identifier. Use it to confirm you are looking at the correct legal entity. If search results for this VAT show a different company name, prioritize the VAT number's data.` : 'No VAT provided. Be extremely careful with companies having similar names.'}
-2. **DO NOT GUESS DOMAINS**: Never assume a website URL based on the company name. Only include it if you find a direct link or mention of ${vat ? `VAT "${vat}"` : `the name "${companyName}"`} on the site.
-3. **"НЯМА ЯСНИ ДАННИ" RULE**: If results are ambiguous, or you find multiple unrelated entities and cannot distinguish them, you MUST set activity to "НЯМА ЯСНИ ДАННИ" and leave all contact fields empty.
-4. **PRIVATE INDIVIDUALS (Физически лица)**: 
-   - If the entity is a private person (not a business), categorize as "Физическо лице".
-   - DO NOT extract contact data for individuals. Write: "Физическо лице - няма други данни".
-
-# MANDATORY PROCESS
-STEP 1: IDENTITY & ACTIVITY SEARCH. Use Google Search with both Name and ${vat ? 'VAT' : 'City/Context'} to find the official entity.
-STEP 2: VALIDATION. Does the found info definitely belong to this specific entity?
-STEP 3: CATEGORIZATION.
-   - If Business: Match with catalog.
-   - If Individual: Categorize as "Физическо лице".
-   - If Missing/Unclear: "НЯМА ЯСНИ ДАННИ".
-
-# CATALOG FOR MATCHING:
+Направи проучване за фирмата "${companyName}" ${vat ? `с БУЛСТАТ ${vat}` : ''} като използваш Гуугъл търсене и намери следните данни:
+1. Основна дейност на фирмата.
+2. Тип клиент (Магазин, Дистрибутор, Краен клиент и т.н.).
+3. Брой физически обекти и детайли за тяхната локация.
+4. Официален уебсайт.
+5. Списък с всички намерени публични имейли за контакт.
+6. Списък с всички намерени телефонни номера.
+7. Списък с отговорни лица/управители (имена, длъжност, личен телефон и имейл, ако са публично достъпни).
+8. Съпоставка на фирмата с нашите продуктови групи:
 ${groupsContext}
 
-# OUTPUT FORMAT
-Return a JSON object. If data is unclear, use null for website and empty arrays for others.
+ВАЖНО: Ако не намериш информация за конкретно поле, върни празен списък или null, не измисляй данни.
 `;
 
     try {
@@ -56,7 +39,7 @@ Return a JSON object. If data is unclear, use null for website and empty arrays 
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              activity: { type: Type.STRING, description: "Ясно описание или 'НЯМА ЯСНИ ДАННИ' или 'Физическо лице - няма други данни'" },
+              activity: { type: Type.STRING },
               clientType: { type: Type.STRING, enum: ["Магазин / Верига", "Дистрибутор/Рекламна агенция", "Краен клиент", "Физическо лице", "Друго / Неприложимо"] },
               locationsCount: { type: Type.STRING },
               locationDetails: { type: Type.STRING },
@@ -82,8 +65,8 @@ Return a JSON object. If data is unclear, use null for website and empty arrays 
                   properties: {
                     name: { type: Type.STRING },
                     role: { type: Type.STRING },
-                    phone: { type: Type.STRING },
-                    email: { type: Type.STRING }
+                    phone: { type: Type.STRING, nullable: true },
+                    email: { type: Type.STRING, nullable: true }
                   },
                   required: ["name", "role"]
                 }
@@ -107,7 +90,7 @@ Return a JSON object. If data is unclear, use null for website and empty arrays 
 
       return {
         ...data,
-        sources: sources.slice(0, 8)
+        sources: sources.slice(0, 10)
       };
     } catch (error) {
       console.error("Gemini Analysis Error:", error);

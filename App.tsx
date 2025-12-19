@@ -44,7 +44,7 @@ const INITIAL_PRODUCT_GROUPS: ProductGroup[] = [
   { 
     id: '1', 
     name: 'Shop Equipment (Оборудване за магазини)', 
-    description: `# TARGET PROFILE: SHOP EQUIPMENT\n\n## 1. MAIN CRITERIA (The Physical Store Rule)\nНай-важният критерий е наличието на ФИЗИЧЕСКИ ТЪРГОВСКИ ОБЕКТ (Brick-and-Mortar). Търсим фирми, които имат реални помещения, в които клиентите влизат, за да пазаруват стоки от рафтове.\n\n## 2. IDEAL BUSINESS TYPES (High Potential)\n* Хранителни стоки (FMCG): Супермаркети, квартални минимаркети, магазини "Нон-стоп", магазини за алкохол и цигари, пекарни.\n* Специализирани: Аптеки, дрогерии, зоомагазини, книжарници, магазини за подаръци/играчки.\n* Технически: Железарии, строителни борси, магазини за авточасти, бои и лакове.\n\n## 3. NEGATIVE CRITERIA (Low Potential)\n* Pure E-commerce: Онлайн магазини без физически шоурум.\n* Офис дейности: Адвокати, ИТ, счетоводство, консултанти.\n* Услуги: Фризьори, козметици (имат малко рафтове).` 
+    description: `# TARGET PROFILE: SHOP EQUIPMENT\n\n## 1. MAIN CRITERIA (The Physical Store Rule)\nНай-важният критерий е наличието на ФИЗИЧЕСКИ ТЪРГОВСКИ ОБЕКТ (Brick-and-Matter). Търсим фирми, които имат реални помещения, в които клиентите влизат, за да пазаруват стоки от рафтове.\n\n## 2. IDEAL BUSINESS TYPES (High Potential)\n* Хранителни стоки (FMCG): Супермаркети, квартални минимаркети, магазини "Нон-стоп", магазини for алкохол и цигари, пекарни.\n* Специализирани: Аптеки, дрогерии, зоомагазини, книжарници, магазини за подаръци/играчки.\n* Технически: Железарии, строителни борси, магазини за авточасти, бои и лакове.\n\n## 3. NEGATIVE CRITERIA (Low Potential)\n* Pure E-commerce: Онлайн магазини без физически шоурум.\n* Офис дейности: Адвокати, ИТ, счетоводство, консултанти.\n* Услуги: Фризьори, козметици (имат малко рафтове).` 
   },
   { 
     id: '2', 
@@ -65,41 +65,26 @@ const INITIAL_PRODUCT_GROUPS: ProductGroup[] = [
     id: '5', 
     name: 'Store Accessories (Аксесоари за магазини)', 
     description: `# TARGET PROFILE: STORE ACCESSORIES (Universal)\n\n## 1. MAIN CRITERIA (Universal Application)\nТърсим АБСОЛЮТНО ВСЕКИ обект, в който се съхранява или продава физическа стока. Диапазонът е от най-малката сергия, през стандартните магазини, до ГОЛЕМИ СКЛАДОВИ БАЗИ.\n\n## 2. IDEAL CUSTOMER TYPES (All Inclusive)\n* Търговия на дребно (Retail): Всички видове магазини.\n* Складове и Логистика (Warehouse): Складови бази, които имат нужда от организация.\n* Физически лица и Микро-бизнес: Собственици на павилиони, сергии на пазари.\n* Специализирани обекти: Ателиета, сервизи, болнични складове, архиви.\n\n## 3. NEGATIVE CRITERIA (Very Limited)\n* Pure Digital/Service: Единствено фирми, които нямат НИКАКВА физическа дейност или стока.` 
-  },
-  { 
-    id: '6', 
-    name: 'Advertising & Event Equipment (Рекламно оборудване)', 
-    description: `# TARGET PROFILE: ADVERTISING & EVENT EQUIPMENT\n\n## 1. MAIN CRITERIA (Visual Communication & Events)\nТърсим организации, които имат нужда да КОМУНИКИРАТ ВИЗУАЛНО с поток от хора.\n\n## 2. IDEAL CUSTOMER TYPES (High Potential)\n* Корпоративни и Услуги: Банки, Застрахователни офиси, Недвижими имоти, Туристически агенции.\n* Търговски обекти и HORECA: Ресторанти, Кафенета, Магазини.\n* B2B Търговци and Производители (The Exhibitors): Всички, които посещават панаири и събития.\n* Държавни и Образователни: Университети, Училища, Общини.\n* Посредници: Рекламни агенции.\n\n## 3. NEGATIVE CRITERIA (Low Potential)\n* Скрити производства: Цехове и фабрики без посетители.\n* Home Office / Freelancers: Индивидуални хора без офис.` 
-  },
-  { 
-    id: '7', 
-    name: 'Warehouse & Archive Shelving (Склад и Архив)', 
-    description: `# TARGET PROFILE: WAREHOUSE & ARCHIVE SHELVING\n\n## 1. MAIN CRITERIA (Storage & Organization)\nТърсим организации, които имат нужда да СЪХРАНЯВАТ неща в помещения без достъп на крайни клиенти.\n\n## 2. IDEAL CUSTOMER TYPES (High Potential)\n* Администрация и Услуги: Счетоводни къщи, Адвокати, Банки, Болници, Общини.\n* E-commerce & Логистика (Picking Zones): Онлайн магазини, Куриерски офиси.\n* Търговия (Back-store): Складовата част на всеки магазин.\n* Индустрия и Сервизи: Автосервизи, цехове.\n\n## 3. NEGATIVE CRITERIA (Low Potential)\n* Тежка логистика (Pallet Only): Бази, които работят само с палети.\n* Виртуални офиси: Фирми без физически адрес.` 
-  },
-  { 
-    id: '8', 
-    name: 'Office Furniture (Офис обзавеждане)', 
-    description: `# TARGET PROFILE: OFFICE FURNITURE\n\n## 1. MAIN CRITERIA (Workstations & Personnel)\nТърсим организации с ОФИС ДЕЙНОСТ и административен персонал.\n\n## 2. IDEAL CUSTOMER TYPES (High Potential)\n* "Paper-Heavy" Услуги: Счетоводни къщи, Адвокати, Нотариуси, ЧСИ.\n* Корпоративни и IT: Софтуерни компании, Кол центрове, Рекламни агенции.\n* Образование: Частни училища, Езикови школи.\n* Back-Office на други бизнеси: Административната част на заводи и логистични центрове.\n\n## 3. NEGATIVE CRITERIA (Low Potential)\n* Микро-търговия: Павилиони, сергии.\n* Тежък физически труд: Строителни бригади.\n* Хорека: Ресторанти и барове.` 
   }
 ];
 
 const PROMPT_VERSIONS = [
   {
-    version: "v8.0 (Anti-Guessing)",
+    version: "v12.5 (Hallucination Lockdown)",
     date: "Март 2025",
-    changes: "Строг протокол срещу халюцинации. Забрана за налучкване на домейни. Въвеждане на 'НЯМА ЯСНИ ДАННИ'.",
-    fullText: `# ZERO HALLUCINATION PROTOCOL:\n1. DO NOT GUESS DOMAINS.\n2. "НЯМА ЯСНИ ДАННИ" Rule.`
+    changes: "Радикална забрана за синтетични домейни.",
+    fullText: `# LOCKDOWN RULES:\n1. NO SYNTHETIC DOMAINS.`
   },
   {
-    version: "v9.0 (VAT-Ready Search)",
+    version: "v13.0 (Simplified Search)",
     date: "Текуща (Март 2025)",
-    changes: "Добавена поддръжка за БУЛСТАТ (VAT ID) за максимална точност. Инструкция за използване на VAT като водещ идентификатор при търсене.",
-    fullText: `# ROLE: Expert B2B Lead Researcher for "Zografa".\n# VAT MATCHING PROTOCOL:\nThe VAT/BULSTAT number is a unique identifier. Use it to confirm the legal entity. If name and VAT conflict, prioritize the VAT's data from official registers.`
+    changes: "Директно проучване чрез Google Search инструмент. Опростени инструкции за намиране на контакти, дейност и отговорни лица.",
+    fullText: `Направи проучване за фирмата като използваш Гуугъл търсене и намери следните данни: Дейност, Тип клиент, Обекти, Уебсайт, Имейли, Телефони, Отговорни лица.`
   }
 ];
 
-const STORAGE_KEY = 'zografa_sales_catalog_v9_final';
-const CLIENTS_STORAGE_KEY = 'zografa_analyzed_clients_v9_final';
+const STORAGE_KEY = 'zografa_sales_catalog_v13_0';
+const CLIENTS_STORAGE_KEY = 'zografa_analyzed_clients_v13_0';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -151,7 +136,6 @@ const ClientTypeBadge = ({ type }: { type: string }) => {
 export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDatabaseOpen, setIsDatabaseOpen] = useState(false);
-  const [dbSearch, setDbSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'catalog' | 'history'>('catalog');
   
   const [catalog, setCatalog] = useState<ProductGroup[]>(() => {
@@ -269,9 +253,10 @@ export default function App() {
   const runAnalysis = async () => {
     const activeGroups = catalog.filter(g => selectedGroupIds.has(g.id));
     if (clients.length === 0 || isProcessing || activeGroups.length === 0) return;
+    
+    setShouldTerminate(false);
     setIsProcessing(true);
     setIsPaused(false);
-    setShouldTerminate(false);
 
     for (let i = 0; i < clients.length; i++) {
       if (shouldTerminateRef.current) {
@@ -282,10 +267,8 @@ export default function App() {
         await new Promise(r => setTimeout(r, 500));
         if (shouldTerminateRef.current) break;
       }
-      if (shouldTerminateRef.current) {
-          setClients(prev => prev.map(c => c.status === 'processing' ? { ...c, status: 'idle' } : c));
-          break;
-      }
+      if (shouldTerminateRef.current) break;
+      
       if (clients[i].status === 'completed') continue;
 
       setClients(prev => prev.map((c, idx) => i === idx ? { ...c, status: 'processing' as const } : c));
@@ -297,19 +280,23 @@ export default function App() {
       } catch (e) {
         setClients(prev => prev.map((c, idx) => i === idx ? { ...c, status: 'error' as const } : c));
       }
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 800));
     }
     setIsProcessing(false);
   };
 
+  const stopAnalysis = () => {
+    setShouldTerminate(true);
+  };
+
   const clearEverything = () => {
-    if (window.confirm('Това ще ИЗЧИСТИ текущия списък и ще СПРЕ текущия анализ. Желаете ли?')) {
-      setShouldTerminate(true);
-      setIsProcessing(false);
+    if (window.confirm('Това ще ИЗЧИСТИ списъка. Желаете ли?')) {
+      stopAnalysis();
       setClients([]);
       setExpandedClients(new Set());
       setExpandedSources(new Set());
       localStorage.removeItem(CLIENTS_STORAGE_KEY);
+      setIsProcessing(false);
     }
   };
 
@@ -373,7 +360,7 @@ export default function App() {
 
             {isProcessing && (
               <button 
-                onClick={() => setShouldTerminate(true)}
+                onClick={stopAnalysis}
                 className="px-8 py-4 rounded-full text-base font-black uppercase tracking-widest shadow-xl bg-red-600 text-white hover:bg-red-700 hover:scale-105 active:scale-95 flex items-center gap-3 transition-all animate-in slide-in-from-bottom-2"
               >
                 <SquareX className="w-6 h-6" /> Спри
@@ -390,7 +377,7 @@ export default function App() {
                 onClick={clearEverything} 
                 className="text-xs font-black text-rose-600 uppercase flex items-center gap-2 hover:bg-rose-50 px-4 py-2 rounded-xl border border-rose-100 transition-all shadow-sm active:scale-95"
               >
-                <Trash2 className="w-4 h-4" /> Изчисти всичко
+                <Trash2 className="w-4 h-4" /> Нулирай
               </button>
             )}
           </div>
@@ -487,7 +474,10 @@ export default function App() {
                                     {p.phone && <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-slate-400" /><span className="text-sm font-bold text-slate-700">{p.phone}</span></div>}
                                   </div>
                                 </div>
-                              )) : <span className="text-sm text-slate-400 italic">Няма открити конкретни лица.</span>}
+                              )) : <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 opacity-60">
+                                <Info className="w-6 h-6 text-slate-300 mb-2" />
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter text-center">Липсват верифицирани лица</span>
+                              </div>}
                             </div>
                           </div>
 
@@ -495,13 +485,13 @@ export default function App() {
                             <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200">
                               <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Mail className="w-4 h-4" /> Общи Имейли</h4>
                               <div className="flex flex-col gap-3">
-                                {client.emails?.length ? client.emails.map(e => <EmailBadge key={e} email={e} />) : <span className="text-sm text-slate-400 italic">Няма открити общи имейли.</span>}
+                                {client.emails?.length ? client.emails.map(e => <EmailBadge key={e} email={e} />) : <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Липсват данни</span>}
                               </div>
                             </div>
                             <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200">
                               <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Phone className="w-4 h-4" /> Общи Телефони</h4>
                               <div className="flex flex-col gap-3">
-                                {client.phoneNumbers?.length ? client.phoneNumbers.map(ph => <span key={ph} className="text-base font-black text-slate-700">{ph}</span>) : <span className="text-sm text-slate-400 italic">Няма открити общи телефони.</span>}
+                                {client.phoneNumbers?.length ? client.phoneNumbers.map(ph => <span key={ph} className="text-base font-black text-slate-700">{ph}</span>) : <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Липсват данни</span>}
                               </div>
                             </div>
                           </div>
@@ -649,7 +639,7 @@ export default function App() {
       )}
 
       <footer className="mt-24 opacity-30 text-[10px] font-black uppercase tracking-[0.8em] text-center pb-20">
-        Zografa Analyst v9.1 | High Precision AI Research
+        Zografa Analyst v13.0 | Search Mode Active
       </footer>
     </div>
   );
