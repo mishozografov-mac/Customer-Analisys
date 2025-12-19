@@ -36,6 +36,7 @@ export interface Client {
   phoneNumbers?: string[];
   isEmailValid?: boolean;
   responsiblePersons?: ContactPerson[];
+  correctedName?: string;
 }
 
 export interface AnalysisResult {
@@ -49,4 +50,5 @@ export interface AnalysisResult {
   emails: string[];
   phoneNumbers: string[];
   responsiblePersons: ContactPerson[];
+  correctedName?: string;
 }

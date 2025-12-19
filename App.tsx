@@ -37,7 +37,11 @@ import {
   Code,
   User,
   Fingerprint,
-  SquareX
+  SquareX,
+  AlertCircle,
+  RefreshCcw,
+  ZapOff,
+  SearchX
 } from 'lucide-react';
 
 const INITIAL_PRODUCT_GROUPS: ProductGroup[] = [
@@ -70,21 +74,21 @@ const INITIAL_PRODUCT_GROUPS: ProductGroup[] = [
 
 const PROMPT_VERSIONS = [
   {
-    version: "v12.5 (Hallucination Lockdown)",
+    version: "v13.5 (Strict Verification)",
     date: "Март 2025",
-    changes: "Радикална забрана за синтетични домейни.",
-    fullText: `# LOCKDOWN RULES:\n1. NO SYNTHETIC DOMAINS.`
+    changes: "Въвеждане на състояние 'няма съвпадение в Гугъл'. Пълна забрана за генериране на данни.",
+    fullText: `Ако в резултатите от търсенето НЕ се появява фирма, която категорично да съвпада... ЗАДЪЛЖИТЕЛНО постави стойност "няма съвпадение в Гугъл"...`
   },
   {
-    version: "v13.0 (Simplified Search)",
+    version: "v13.6 (2-Char Strict Rule)",
     date: "Текуща (Март 2025)",
-    changes: "Директно проучване чрез Google Search инструмент. Опростени инструкции за намиране на контакти, дейност и отговорни лица.",
-    fullText: `Направи проучване за фирмата като използваш Гуугъл търсене и намери следните данни: Дейност, Тип клиент, Обекти, Уебсайт, Имейли, Телефони, Отговорни лица.`
+    changes: "Ограничаване на автоматичната корекция до максимум 2 символа разлика. По-голяма разлика се счита за друга фирма и води до резултат 'няма съвпадение'.",
+    fullText: `Ако името се различава с ЕДИН или ДВА символа, приеми за техническа грешка... АКО РАЗЛИКАТА Е ПОВЕЧЕ ОТ ДВА СИМВОЛА, ТОВА НЕ Е ТЕХНИЧЕСКА ГРЕШКА. Приеми, че това е друга фирма и върни "няма съвпадение в Гугъл".`
   }
 ];
 
-const STORAGE_KEY = 'zografa_sales_catalog_v13_0';
-const CLIENTS_STORAGE_KEY = 'zografa_analyzed_clients_v13_0';
+const STORAGE_KEY = 'zografa_sales_catalog_v13_6';
+const CLIENTS_STORAGE_KEY = 'zografa_analyzed_clients_v13_6';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -387,24 +391,41 @@ export default function App() {
               const isExpanded = expandedClients.has(client.id);
               const isCompleted = client.status === 'completed';
               const isSourcesOpen = expandedSources.has(client.id);
+              const isNoMatch = client.activity === 'няма съвпадение в Гугъл';
+              const isAmbiguous = client.activity === 'Неясни данни' || isNoMatch;
+              const hasCorrection = isCompleted && client.correctedName && client.correctedName.toLowerCase() !== client.name.toLowerCase();
 
               return (
                 <div key={client.id} className={`bg-white rounded-2xl border transition-all ${client.status === 'processing' ? 'border-indigo-400 ring-4 ring-indigo-50 shadow-xl' : 'border-slate-200 shadow-sm overflow-hidden'}`}>
                   <div className="p-8">
                     <div className={`flex items-start justify-between ${isCompleted ? 'cursor-pointer' : ''}`} onClick={() => isCompleted && toggleExpand(client.id)}>
                       <div className="flex items-center gap-6 w-full">
-                        <div className={`w-12 h-12 rounded-xl text-sm font-black flex-shrink-0 flex items-center justify-center ${isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
-                          {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : idx + 1}
+                        <div className={`w-12 h-12 rounded-xl text-sm font-black flex-shrink-0 flex items-center justify-center ${isCompleted ? (isAmbiguous ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700') : 'bg-slate-100 text-slate-400'}`}>
+                          {isCompleted ? (isNoMatch ? <SearchX className="w-6 h-6" /> : isAmbiguous ? <AlertCircle className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />) : idx + 1}
                         </div>
                         <div className="flex-1 flex flex-wrap items-center justify-between gap-4">
                           <div>
                               <div className="flex items-center gap-3">
-                                <h3 className="font-black text-2xl tracking-tight text-slate-800">{client.name}</h3>
+                                <div className="flex flex-col">
+                                  {hasCorrection && !isAmbiguous && (
+                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 animate-pulse">
+                                      <RefreshCcw className="w-3 h-3" /> Верифицирана корекция (≤2 симв.)
+                                    </div>
+                                  )}
+                                  <h3 className={`font-black text-2xl tracking-tight ${isAmbiguous ? 'text-slate-400' : 'text-slate-800'}`}>
+                                    {hasCorrection && !isNoMatch ? client.correctedName : client.name}
+                                  </h3>
+                                  {hasCorrection && !isNoMatch && (
+                                    <span className="text-xs font-bold text-slate-400 italic">Оригинално търсене: {client.name}</span>
+                                  )}
+                                </div>
                                 {client.vat && (
                                   <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 border border-slate-200 px-2 py-0.5 rounded-md uppercase tracking-tighter">
                                     <Fingerprint className="w-3 h-3" /> {client.vat}
                                   </span>
                                 )}
+                                {isNoMatch && <span className="text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 rounded uppercase tracking-widest">Липсва съвпадение</span>}
+                                {isAmbiguous && !isNoMatch && <span className="text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded uppercase tracking-widest">Неясни данни</span>}
                               </div>
                               {isCompleted && client.website && (
                                   <a href={client.website.startsWith('http') ? client.website : `https://${client.website}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-indigo-500 hover:underline flex items-center gap-1.5 mt-1 uppercase tracking-wider">
@@ -414,7 +435,7 @@ export default function App() {
                           </div>
                           {isCompleted && (
                             <div className="flex items-center gap-4">
-                              <ClientTypeBadge type={client.clientType || ''} />
+                              {!isAmbiguous && <ClientTypeBadge type={client.clientType || ''} />}
                               {isExpanded ? <ChevronDown className="w-6 h-6 text-slate-400" /> : <ChevronRight className="w-6 h-6 text-slate-400" />}
                             </div>
                           )}
@@ -424,78 +445,100 @@ export default function App() {
 
                     {client.status === 'processing' && (
                       <div className="mt-4 pl-18 ml-14">
-                        <p className="text-sm text-indigo-600 font-bold animate-pulse">Проучване в реално време за "{client.name}"...</p>
+                        <p className="text-sm text-indigo-600 font-bold animate-pulse">Строга верификация в Google за "{client.name}"...</p>
                       </div>
                     )}
 
                     {isCompleted && isExpanded && (
                       <div className="mt-8 pt-8 border-t border-slate-100 space-y-10 animate-in fade-in duration-300">
                         <div className="w-full">
-                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Search className="w-4 h-4 text-indigo-500" /> Основна дейност</h4>
-                          <div className="bg-slate-50 p-6 rounded-xl text-slate-800 leading-relaxed text-lg font-medium border border-slate-100">
+                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Search className="w-4 h-4 text-indigo-500" /> Статус на проучването</h4>
+                          <div className={`p-6 rounded-xl text-lg font-medium border ${isAmbiguous ? 'bg-rose-50 text-rose-800 border-rose-100 italic flex items-center gap-3' : 'bg-slate-50 text-slate-800 border-slate-100 leading-relaxed'}`}>
+                            {isAmbiguous ? <SearchX className="w-6 h-6 flex-shrink-0" /> : <Search className="w-6 h-6 flex-shrink-0" />}
                             {client.activity}
                           </div>
+                          
+                          {isNoMatch && (
+                            <div className="mt-4 p-5 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
+                               <ZapOff className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                               <div>
+                                 <h5 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Резултат: Няма строго съвпадение</h5>
+                                 <p className="text-xs text-rose-700 font-medium leading-relaxed">Намерените в Google фирми се различават с повече от 2 символа от <strong>"{client.name}"</strong>. Проучването е спряно съгласно правилото за техническа грешка.</p>
+                               </div>
+                            </div>
+                          )}
+                          
+                          {hasCorrection && !isAmbiguous && (
+                            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-start gap-3">
+                               <Info className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+                               <p className="text-xs text-indigo-700 font-medium leading-relaxed">Данните са генерирани за <strong>{client.correctedName}</strong> (разлика ≤ 2 симв.), идентифицирана като правилното име на <strong>"{client.name}"</strong>.</p>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="w-full">
-                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-indigo-500" /> Обекти ({client.locationsCount})</h4>
-                          <div className="bg-white p-6 rounded-xl text-slate-600 text-base border border-slate-100 italic">
-                            {client.locationDetails || 'Няма потвърдена информация.'}
-                          </div>
-                        </div>
+                        {!isAmbiguous && (
+                          <>
+                            <div className="w-full">
+                              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-indigo-500" /> Обекти ({client.locationsCount})</h4>
+                              <div className="bg-white p-6 rounded-xl text-slate-600 text-base border border-slate-100 italic">
+                                {client.locationDetails || 'Няма потвърдена информация.'}
+                              </div>
+                            </div>
 
-                        <div className="w-full">
-                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Потенциал по категории</h4>
-                          <div className="space-y-3">
-                            {client.matches?.map((m, mi) => (
-                              <div key={mi} className="border border-slate-100 p-4 rounded-xl flex items-center gap-6 hover:bg-slate-50 transition-colors">
-                                <SuitabilityBadge suitability={m.suitability} />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-black text-slate-900 text-sm">{m.categoryName}</div>
-                                  <p className="text-xs text-slate-500 truncate">{m.reasoning}</p>
+                            <div className="w-full">
+                              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Потенциал по категории</h4>
+                              <div className="space-y-3">
+                                {client.matches?.map((m, mi) => (
+                                  <div key={mi} className="border border-slate-100 p-4 rounded-xl flex items-center gap-6 hover:bg-slate-50 transition-colors">
+                                    <SuitabilityBadge suitability={m.suitability} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-black text-slate-900 text-sm">{m.categoryName}</div>
+                                      <p className="text-xs text-slate-500 truncate">{m.reasoning}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-8 w-full">
+                              <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100/50">
+                                <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                  <UserCheck className="w-4 h-4" /> Отговорни лица
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {client.responsiblePersons?.length ? client.responsiblePersons.map((p, pi) => (
+                                    <div key={pi} className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                                      <div className="font-black text-slate-800 text-base">{p.name}</div>
+                                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-wider mb-3">{p.role}</div>
+                                      <div className="space-y-2">
+                                        {p.email && <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-slate-400" /><EmailBadge email={p.email} /></div>}
+                                        {p.phone && <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-slate-400" /><span className="text-sm font-bold text-slate-700">{p.phone}</span></div>}
+                                      </div>
+                                    </div>
+                                  )) : <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 opacity-60">
+                                    <Info className="w-6 h-6 text-slate-300 mb-2" />
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter text-center">Липсват верифицирани лица</span>
+                                  </div>}
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
 
-                        <div className="space-y-8 w-full">
-                          <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100/50">
-                            <h4 className="text-[11px] font-black text-indigo-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                              <UserCheck className="w-4 h-4" /> Отговорни лица
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {client.responsiblePersons?.length ? client.responsiblePersons.map((p, pi) => (
-                                <div key={pi} className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
-                                  <div className="font-black text-slate-800 text-base">{p.name}</div>
-                                  <div className="text-[10px] font-black text-indigo-400 uppercase tracking-wider mb-3">{p.role}</div>
-                                  <div className="space-y-2">
-                                    {p.email && <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-slate-400" /><EmailBadge email={p.email} /></div>}
-                                    {p.phone && <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-slate-400" /><span className="text-sm font-bold text-slate-700">{p.phone}</span></div>}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200">
+                                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Mail className="w-4 h-4" /> Общи Имейли</h4>
+                                  <div className="flex flex-col gap-3">
+                                    {client.emails?.length ? client.emails.map(e => <EmailBadge key={e} email={e} />) : <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Липсват данни</span>}
                                   </div>
                                 </div>
-                              )) : <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 opacity-60">
-                                <Info className="w-6 h-6 text-slate-300 mb-2" />
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter text-center">Липсват верифицирани лица</span>
-                              </div>}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200">
-                              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Mail className="w-4 h-4" /> Общи Имейли</h4>
-                              <div className="flex flex-col gap-3">
-                                {client.emails?.length ? client.emails.map(e => <EmailBadge key={e} email={e} />) : <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Липсват данни</span>}
+                                <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200">
+                                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Phone className="w-4 h-4" /> Общи Телефони</h4>
+                                  <div className="flex flex-col gap-3">
+                                    {client.phoneNumbers?.length ? client.phoneNumbers.map(ph => <span key={ph} className="text-base font-black text-slate-700">{ph}</span>) : <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Липсват данни</span>}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-200">
-                              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Phone className="w-4 h-4" /> Общи Телефони</h4>
-                              <div className="flex flex-col gap-3">
-                                {client.phoneNumbers?.length ? client.phoneNumbers.map(ph => <span key={ph} className="text-base font-black text-slate-700">{ph}</span>) : <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Липсват данни</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                          </>
+                        )}
 
                         <div className="w-full border-t border-slate-50 pt-6">
                            <button onClick={(e) => toggleSources(e, client.id)} className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest hover:text-indigo-500 transition-colors">
@@ -639,7 +682,7 @@ export default function App() {
       )}
 
       <footer className="mt-24 opacity-30 text-[10px] font-black uppercase tracking-[0.8em] text-center pb-20">
-        Zografa Analyst v13.0 | Search Mode Active
+        Zografa Analyst v13.6 | 2-Char Strict Rule Active
       </footer>
     </div>
   );
