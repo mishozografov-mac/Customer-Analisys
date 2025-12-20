@@ -5,20 +5,25 @@ export interface ProductGroup {
   description: string;
 }
 
-export interface ContactPerson {
+export interface ResponsiblePerson {
   name: string;
   role: string;
-  phone?: string;
-  email?: string;
+  direct_contact: string;
 }
 
-export type SuitabilityLevel = 'HIGH' | 'MEDIUM' | 'LOW';
-
-export interface MatchedCategory {
-  categoryName: string;
-  suitability: SuitabilityLevel;
-  reasoning: string;
+export interface GeneralContacts {
+  phones: string[];
+  emails: string[];
+  website: string;
 }
+
+export interface ScaleAnalysis {
+  estimated_locations: string;
+  scale_category: 'Single' | 'Small Chain' | 'Medium Chain' | 'Large Chain' | 'Unknown';
+  details: string;
+}
+
+export type ScoreLevel = 'High' | 'Medium' | 'Low' | 'NONE';
 
 export interface Client {
   id: string;
@@ -27,28 +32,27 @@ export interface Client {
   status: 'idle' | 'processing' | 'completed' | 'error';
   activity?: string;
   clientType?: string;
-  locationsCount?: string;
-  locationDetails?: string;
   website?: string;
-  matches?: MatchedCategory[];
+  category_scores?: { [categoryId: string]: ScoreLevel };
+  analysis?: string;
   sources?: Array<{ title: string; uri: string }>;
-  emails?: string[];
-  phoneNumbers?: string[];
-  isEmailValid?: boolean;
-  responsiblePersons?: ContactPerson[];
+  contacts?: {
+    responsible_persons: ResponsiblePerson[];
+    general_contacts: GeneralContacts;
+  };
   correctedName?: string;
+  scale_analysis?: ScaleAnalysis;
 }
 
 export interface AnalysisResult {
+  correctedName?: string;
   activity: string;
   clientType: string;
-  locationsCount?: string;
-  locationDetails?: string;
-  website?: string;
-  matches: MatchedCategory[];
-  sources: Array<{ title: string; uri: string }>;
-  emails: string[];
-  phoneNumbers: string[];
-  responsiblePersons: ContactPerson[];
-  correctedName?: string;
+  category_scores: { [categoryId: string]: ScoreLevel };
+  analysis: string;
+  scale_analysis: ScaleAnalysis;
+  contacts: {
+    responsible_persons: ResponsiblePerson[];
+    general_contacts: GeneralContacts;
+  };
 }
