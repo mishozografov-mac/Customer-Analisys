@@ -4,6 +4,7 @@ import { Client, ProductGroup, ScoreLevel, ResponsiblePerson, ScaleAnalysis } fr
 import { GeminiService } from './geminiService';
 import SettingsModal from './SettingsModal';
 import { DEFAULT_PRODUCT_GROUPS } from './defaultCatalog';
+import { SYSTEM_SHEET_URL, APP_VERSION } from './config';
 import * as XLSX from 'xlsx';
 import { 
   Trash2, 
@@ -46,7 +47,6 @@ import {
 } from 'lucide-react';
 
 const STORAGE_KEY = 'zografa_sales_v15_1';
-const CLIENTS_STORAGE_KEY = 'zografa_clients_v15_1';
 
 const ScoreBadge = ({ score }: { score: ScoreLevel }) => {
   const styles = {
@@ -60,7 +60,6 @@ const ScoreBadge = ({ score }: { score: ScoreLevel }) => {
 
 const ScaleBadge = ({ scale }: { scale: ScaleAnalysis | undefined }) => {
   if (!scale || scale.scale_category === 'Single' || scale.scale_category === 'Unknown') {
-    // Fix: Wrap Home icon in a span to provide a tooltip via title attribute since Lucide components don't accept title prop directly.
     if (scale?.scale_category === 'Single') return <span title="Единичен обект"><Home className="w-4 h-4 text-slate-300" /></span>;
     return null;
   }
@@ -108,18 +107,25 @@ const ClientTypeBadge = ({ type }: { type: string }) => {
 
 export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isDatabaseOpen, setIsDatabaseOpen] = useState(false);
   
   const [catalog, setCatalog] = useState<ProductGroup[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : DEFAULT_PRODUCT_GROUPS;
   });
 
-  const [clients, setClients] = useState<Client[]>(() => {
-    const saved = localStorage.getItem(CLIENTS_STORAGE_KEY);
-    return saved ? JSON.parse(saved).map((c: any) => ({ ...c, status: c.status === 'completed' ? 'completed' : 'idle' })) : [];
+  const [sheetUrl, setSheetUrl] = useState<string>(() => {
+    const saved = localStorage.getItem('google_sheet_url');
+    return saved && saved.length > 10 ? saved : SYSTEM_SHEET_URL;
   });
 
+  useEffect(() => {
+    if (!localStorage.getItem('google_sheet_url')) {
+      localStorage.setItem('google_sheet_url', SYSTEM_SHEET_URL);
+    }
+  }, []);
+
+  const [clients, setClients] = useState<Client[]>([]);
+  const [stats, setStats] = useState({ total: 0, completed: 0, success: 0, error: 0 });
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [newClientName, setNewClientName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -130,7 +136,6 @@ export default function App() {
   const gemini = useMemo(() => new GeminiService(), []);
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(catalog)); }, [catalog]);
-  useEffect(() => { localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients)); }, [clients]);
 
   const addClient = () => {
     const lines = newClientName.split('\n').map(n => n.trim()).filter(n => n.length > 1);
@@ -145,6 +150,7 @@ export default function App() {
       return { id: Math.random().toString(36).substr(2, 9), name, vat, status: 'idle' as 'idle' };
     });
     setClients(prev => [...newBatch, ...prev]);
+    setStats(prev => ({ ...prev, total: prev.total + newBatch.length }));
     setNewClientName('');
   };
 
@@ -163,11 +169,11 @@ export default function App() {
         status: 'idle' as 'idle'
       })).filter(c => c.name);
       setClients(prev => [...newBatch, ...prev]);
+      setStats(prev => ({ ...prev, total: prev.total + newBatch.length }));
     };
     reader.readAsArrayBuffer(file);
   };
 
-  // Helper function for the actual fetch call to Sheets
   const performSaveToSheet = async (client: any, url: string) => {
     const payload = {
       company_name: client.correctedName || client.name,
@@ -201,7 +207,6 @@ export default function App() {
     
     shouldTerminateRef.current = false;
     setIsProcessing(true);
-    const sheetUrl = localStorage.getItem('google_sheet_url');
 
     for (let i = 0; i < clients.length; i++) {
       if (shouldTerminateRef.current) break;
@@ -210,10 +215,8 @@ export default function App() {
       setClients(prev => prev.map((c, idx) => i === idx ? { ...c, status: 'processing' } : c));
       
       try {
-        // 1. ANALYZE using Gemini
         const result = await gemini.analyzeCompany(clients[i].name, catalog, clients[i].vat);
         
-        // 2. AUTO-SAVE to Google Sheets (if URL exists)
         if (sheetUrl) {
           try {
             await performSaveToSheet({ ...clients[i], ...result }, sheetUrl);
@@ -222,32 +225,31 @@ export default function App() {
           }
         }
 
-        // 3. UPDATE STATE locally
         setClients(prev => prev.map((c, idx) => i === idx ? { ...c, status: 'completed', ...result } : c));
+        setStats(prev => ({ ...prev, completed: prev.completed + 1, success: prev.success + 1 }));
         setExpandedClients(prev => new Set(prev).add(clients[i].id));
 
-        // 4. RATE LIMIT PAUSE (2 seconds delay between items)
         if (i < clients.length - 1 && !shouldTerminateRef.current) {
           await new Promise(r => setTimeout(r, 2000));
         }
 
       } catch (e) {
         setClients(prev => prev.map((c, idx) => i === idx ? { ...c, status: 'error' } : c));
+        setStats(prev => ({ ...prev, completed: prev.completed + 1, error: prev.error + 1 }));
       }
     }
     setIsProcessing(false);
   };
 
   const handleManualSaveToSheet = async (client: Client) => {
-    const url = localStorage.getItem('google_sheet_url');
-    if (!url) {
+    if (!sheetUrl) {
       alert("Моля, първо въведете Google Sheet URL в настройките!");
       setIsSettingsOpen(true);
       return;
     }
     setSheetSavingId(client.id);
     try {
-      await performSaveToSheet(client, url);
+      await performSaveToSheet(client, sheetUrl);
       alert('Данните са изпратени към таблицата!');
     } catch (error) {
       console.error('Error manual saving to sheet:', error);
@@ -257,13 +259,17 @@ export default function App() {
     }
   };
 
-  const clearEverything = () => {
-    if (window.confirm('Изчистване на целия списък?')) {
-      shouldTerminateRef.current = true;
-      setClients([]);
-      setExpandedClients(new Set());
-      setIsProcessing(false);
+  const handleResetAll = () => {
+    // 1. Питаме за потвърждение (за да не стане грешка по време на работа)
+    if (clients.length > 0) {
+      if (!window.confirm("Сигурни ли сте? Това ще рестартира приложението и ще изчисти всичко.")) {
+        return;
+      }
     }
+
+    // 2. HARD RELOAD
+    // Това е най-сигурният начин да изчистим RAM паметта и всички input полета
+    window.location.reload();
   };
 
   const onResetCatalog = () => {
@@ -272,15 +278,14 @@ export default function App() {
     }
   };
 
-  const processedCount = clients.filter(c => c.status === 'completed').length;
-  const sheetUrlActive = !!localStorage.getItem('google_sheet_url');
+  const sheetUrlActive = !!sheetUrl && sheetUrl.length > 10;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center">
       <header className="w-full bg-white border-b h-16 px-8 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-6 h-6 text-indigo-600" />
-          <h1 className="font-black text-lg tracking-tight uppercase">Zografa Analyst <span className="text-indigo-500 font-bold ml-1">v15.1</span></h1>
+          <h1 className="font-black text-lg tracking-tight uppercase">Zografa Analyst <span className="text-indigo-500 font-bold ml-1">{APP_VERSION}</span></h1>
         </div>
         <div className="flex items-center gap-4">
           {sheetUrlActive && (
@@ -289,9 +294,6 @@ export default function App() {
               <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Auto-save On</span>
             </div>
           )}
-          <button onClick={() => setIsDatabaseOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg text-sm font-bold hover:bg-slate-200 transition-colors">
-            <Database className="w-4 h-4" /> Архив ({processedCount})
-          </button>
           <button onClick={() => setIsSettingsOpen(true)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <Settings className="w-5 h-5 text-slate-500" />
           </button>
@@ -309,7 +311,13 @@ export default function App() {
           <div className="flex justify-between items-center">
             <label className="flex items-center gap-2 cursor-pointer text-xs font-black text-slate-400 hover:text-indigo-600 transition-colors">
               <FileUp className="w-4 h-4" /> ИМПОРТ ЕКСЕЛ
-              <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept=".xlsx,.xls" />
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handleFileUpload} 
+                accept=".xlsx,.xls" 
+              />
             </label>
             <button onClick={addClient} disabled={!newClientName.trim()} className="px-10 py-3 bg-indigo-600 text-white rounded-xl text-sm font-black uppercase tracking-wider hover:bg-indigo-700 disabled:opacity-30 shadow-lg shadow-indigo-100 transition-all">Добави</button>
           </div>
@@ -335,8 +343,11 @@ export default function App() {
 
         <section className="space-y-4">
           <div className="flex justify-between items-center px-2">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Списък за анализ ({clients.length})</h2>
-            <button onClick={clearEverything} className="text-xs font-black text-rose-600 uppercase flex items-center gap-2 hover:underline">
+            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Списък за анализ ({clients.length}) 
+              {stats.total > 0 && <span className="ml-2 lowercase opacity-60">| {stats.completed}/{stats.total} обработени</span>}
+            </h2>
+            <button onClick={handleResetAll} className="text-xs font-black text-rose-600 uppercase flex items-center gap-2 hover:underline">
               <RotateCcw className="w-3 h-3" /> Нулирай всичко
             </button>
           </div>
@@ -354,8 +365,8 @@ export default function App() {
                     return next;
                   })}>
                     <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCompleted ? 'bg-emerald-100 text-emerald-700' : client.status === 'processing' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'}`}>
-                        {isCompleted ? <CheckCircle2 /> : client.status === 'processing' ? <Loader2 className="animate-spin" /> : <Clock />}
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCompleted ? 'bg-emerald-100 text-emerald-700' : client.status === 'processing' ? 'bg-amber-100 text-amber-600' : client.status === 'error' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'}`}>
+                        {isCompleted ? <CheckCircle2 /> : client.status === 'processing' ? <Loader2 className="animate-spin" /> : client.status === 'error' ? <AlertCircle /> : <Clock />}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -374,7 +385,6 @@ export default function App() {
                   {isCompleted && isExpanded && (
                     <div className="p-6 border-t border-slate-50 space-y-8 bg-slate-50/30 animate-in slide-in-from-top-2 duration-300">
                       
-                      {/* Matrix Scoring Grid */}
                       <div className="space-y-3">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2"><Target className="w-3 h-3" /> Оценки по направления</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -389,7 +399,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Scale Analysis & Integration Action Bar */}
                       <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
                          {client.scale_analysis && (
                           <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-start gap-4 flex-1 shadow-sm">
@@ -505,6 +514,8 @@ export default function App() {
         catalog={catalog}
         setCatalog={setCatalog}
         onResetCatalog={onResetCatalog}
+        sheetUrl={sheetUrl}
+        setSheetUrl={setSheetUrl}
       />
     </div>
   );

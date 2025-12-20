@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, RotateCcw, Server, Thermometer, ScrollText, ShieldAlert, Package, Database, CheckCircle, AlertCircle } from 'lucide-react';
 import { ProductGroup } from './types';
 import { SYSTEM_CONFIG, SYSTEM_PROMPT_TEXT } from './geminiService'; 
+import { SYSTEM_SHEET_URL } from './config';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -10,17 +11,25 @@ interface SettingsModalProps {
   catalog: ProductGroup[];
   setCatalog: (groups: ProductGroup[]) => void;
   onResetCatalog: () => void;
+  sheetUrl: string;
+  setSheetUrl: (url: string) => void;
 }
 
-export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, onResetCatalog }: SettingsModalProps) {
+export default function SettingsModal({ 
+  isOpen, 
+  onClose, 
+  catalog, 
+  setCatalog, 
+  onResetCatalog,
+  sheetUrl,
+  setSheetUrl
+}: SettingsModalProps) {
   if (!isOpen) return null;
 
   const [activeTab, setActiveTab] = useState<'products' | 'system'>('products');
   const [localCatalog, setLocalCatalog] = useState<ProductGroup[]>(catalog);
-  const [sheetUrl, setSheetUrl] = useState(() => localStorage.getItem('google_sheet_url') || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Sync local changes to App state
   const handleSave = () => {
     setCatalog(localCatalog);
     onClose();
@@ -52,11 +61,16 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
     }
   };
 
+  const handleResetToDefaultUrl = () => {
+    setSheetUrl(SYSTEM_SHEET_URL);
+    localStorage.setItem('google_sheet_url', SYSTEM_SHEET_URL);
+    alert("Възстановени са фабричните настройки на връзката.");
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-4xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
-        {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
           <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Настройки</h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
@@ -64,7 +78,6 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
           </button>
         </div>
 
-        {/* TABS */}
         <div className="flex border-b bg-slate-50 px-6 pt-2 gap-4">
           <button 
             onClick={() => setActiveTab('products')}
@@ -80,10 +93,8 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
           </button>
         </div>
 
-        {/* CONTENT AREA */}
         <div className="flex-1 overflow-auto p-6 bg-slate-50/50">
           
-          {/* --- TAB 1: PRODUCTS (EDITABLE) --- */}
           {activeTab === 'products' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-4">
@@ -135,7 +146,6 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
             </div>
           )}
 
-          {/* --- TAB 2: SYSTEM INFO & INTEGRATIONS (READ ONLY + URL) --- */}
           {activeTab === 'system' && (
             <div className="space-y-6 max-w-3xl mx-auto">
               
@@ -147,11 +157,17 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
                  </div>
               </div>
 
-              {/* GOOGLE SHEET URL SECTION */}
               <div className="bg-white p-5 rounded-xl border border-indigo-100 shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-black text-indigo-500 uppercase mb-3 tracking-widest">
-                  <Database className="w-4 h-4" />
-                  Google Sheet Webhook URL
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-xs font-black text-indigo-500 uppercase tracking-widest">
+                    <Database className="w-4 h-4" />
+                    Google Sheet Webhook URL
+                  </div>
+                  {sheetUrl === SYSTEM_SHEET_URL && (
+                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold border border-green-200">
+                      Active: System Default
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 mb-4 leading-relaxed">
                   Поставете тук <strong>Web App URL</strong> адреса от Google Apps Script deployment-а, за да активирате бутона "Запази в Таблица".
@@ -164,6 +180,13 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
                     placeholder="https://script.google.com/macros/s/..."
                     className="flex-1 text-sm border border-slate-200 rounded-lg px-4 py-2.5 outline-none focus:border-indigo-500 bg-slate-50 focus:bg-white transition-all font-mono"
                   />
+                  <button 
+                    onClick={handleResetToDefaultUrl}
+                    title="Върни фабричния линк"
+                    className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 border border-slate-200 transition-colors"
+                  >
+                    Default
+                  </button>
                   <button 
                     onClick={handleSaveUrl}
                     className={`px-6 py-2.5 rounded-lg text-sm font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
@@ -213,7 +236,6 @@ export default function SettingsModal({ isOpen, onClose, catalog, setCatalog, on
           )}
         </div>
 
-        {/* FOOTER */}
         <div className="p-6 border-t bg-white flex justify-end gap-3 z-10">
           <button onClick={onClose} className="px-6 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 transition-colors">
             Затвори
