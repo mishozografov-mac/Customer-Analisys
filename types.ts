@@ -15,6 +15,7 @@ export interface GeneralContacts {
   phones: string[];
   emails: string[];
   website: string;
+  responsible_persons?: ResponsiblePerson[];
 }
 
 export interface ScaleAnalysis {
@@ -36,12 +37,11 @@ export interface Client {
   category_scores?: { [categoryId: string]: ScoreLevel };
   analysis?: string;
   sources?: Array<{ title: string; uri: string }>;
-  contacts?: {
-    responsible_persons: ResponsiblePerson[];
-    general_contacts: GeneralContacts;
-  };
+  contacts?: GeneralContacts;
   correctedName?: string;
   scale_analysis?: ScaleAnalysis;
+  distributor_signal?: boolean;
+  distributor_details?: string;
 }
 
 export interface AnalysisResult {
@@ -51,8 +51,7 @@ export interface AnalysisResult {
   category_scores: { [categoryId: string]: ScoreLevel };
   analysis: string;
   scale_analysis: ScaleAnalysis;
-  contacts: {
-    responsible_persons: ResponsiblePerson[];
-    general_contacts: GeneralContacts;
-  };
+  contacts: GeneralContacts;
+  distributor_signal: boolean;
+  distributor_details?: string;
 }

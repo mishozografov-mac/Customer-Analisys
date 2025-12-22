@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Client, ProductGroup, ScoreLevel, ResponsiblePerson, ScaleAnalysis } from './types';
 import { GeminiService } from './geminiService';
 import SettingsModal from './SettingsModal';
-import { DEFAULT_PRODUCT_GROUPS } from './defaultCatalog';
+import { DEFAULT_CATALOG } from './defaultCatalog';
 import { SYSTEM_SHEET_URL, APP_VERSION } from './config';
 import * as XLSX from 'xlsx';
 import { 
@@ -43,7 +42,8 @@ import {
   ExternalLink,
   TableProperties,
   Target,
-  CloudUpload
+  CloudUpload,
+  Link
 } from 'lucide-react';
 
 const STORAGE_KEY = 'zografa_sales_v15_1';
@@ -110,7 +110,7 @@ export default function App() {
   
   const [catalog, setCatalog] = useState<ProductGroup[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_PRODUCT_GROUPS;
+    return saved ? JSON.parse(saved) : DEFAULT_CATALOG;
   });
 
   const [sheetUrl, setSheetUrl] = useState<string>(() => {
@@ -175,18 +175,18 @@ export default function App() {
   };
 
   const performSaveToSheet = async (client: any, url: string) => {
+    // V2.0 Mapping Alignment
     const payload = {
       company_name: client.correctedName || client.name,
       category_scores: client.category_scores || {},
       analysis: client.analysis,
       client_type: client.clientType,
+      distributor_signal: client.distributor_signal || false,
       contacts: {
         responsible_persons: client.contacts?.responsible_persons || [],
-        general_contacts: {
-          phones: client.contacts?.general_contacts.phones || [],
-          emails: client.contacts?.general_contacts.emails || [],
-          website: client.website || 'Няма данни'
-        }
+        emails: client.contacts?.emails || [],
+        phones: client.contacts?.phones || [],
+        website: client.contacts?.website || 'Няма данни'
       },
       scale_analysis: {
         scale_category: client.scale_analysis?.scale_category || 'Unknown',
@@ -260,21 +260,17 @@ export default function App() {
   };
 
   const handleResetAll = () => {
-    // 1. Питаме за потвърждение (за да не стане грешка по време на работа)
     if (clients.length > 0) {
       if (!window.confirm("Сигурни ли сте? Това ще рестартира приложението и ще изчисти всичко.")) {
         return;
       }
     }
-
-    // 2. HARD RELOAD
-    // Това е най-сигурният начин да изчистим RAM паметта и всички input полета
     window.location.reload();
   };
 
   const onResetCatalog = () => {
     if (window.confirm("Сигурни ли сте? Това ще върне оригиналните описания на Зографа.")) {
-      setCatalog(DEFAULT_PRODUCT_GROUPS);
+      setCatalog(DEFAULT_CATALOG);
     }
   };
 
@@ -303,7 +299,7 @@ export default function App() {
       <main className="w-full max-w-5xl mt-10 px-6 space-y-8 pb-20">
         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <textarea 
-            placeholder="Име на фирма, БУЛСТАТ (на нов ред)..." 
+            placeholder="Въведете Име на фирма, БУЛСТАТ, Email или URL (на нов ред)..." 
             value={newClientName} 
             onChange={e => setNewClientName(e.target.value)} 
             className="w-full px-4 py-3 text-lg border border-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none h-28 bg-slate-50 rounded-xl resize-none mb-4 font-medium"
@@ -371,11 +367,21 @@ export default function App() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-black text-xl tracking-tight text-slate-800">{client.correctedName || client.name}</h3>
+                          {client.contacts?.website && (
+                             <a href={client.contacts.website.startsWith('http') ? client.contacts.website : `https://${client.contacts.website}`} target="_blank" className="p-1 hover:bg-slate-100 rounded transition-colors text-indigo-500" onClick={(e) => e.stopPropagation()}>
+                               <ExternalLink className="w-4 h-4" />
+                             </a>
+                          )}
                           {client.vat && <span className="text-[10px] font-black text-slate-400 border px-1 rounded uppercase tracking-tighter">{client.vat}</span>}
                           <ScaleBadge scale={client.scale_analysis} />
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           {isCompleted && <ClientTypeBadge type={client.clientType || ''} />}
+                          {client.distributor_signal && (
+                            <span className="flex items-center gap-1 text-[10px] bg-rose-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-wider animate-pulse">
+                              <ShieldAlert className="w-3 h-3" /> Distributors List Found
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -385,6 +391,16 @@ export default function App() {
                   {isCompleted && isExpanded && (
                     <div className="p-6 border-t border-slate-50 space-y-8 bg-slate-50/30 animate-in slide-in-from-top-2 duration-300">
                       
+                      {client.distributor_signal && (
+                        <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                           <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+                           <div>
+                             <div className="text-xs font-black text-rose-700 uppercase tracking-widest mb-1">Дистрибуторски Сигнал</div>
+                             <p className="text-sm text-rose-600 font-medium italic">{client.distributor_details}</p>
+                           </div>
+                        </div>
+                      )}
+
                       <div className="space-y-3">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2"><Target className="w-3 h-3" /> Оценки по направления</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -453,40 +469,27 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="space-y-3 w-full bg-slate-100/50 p-5 rounded-2xl border border-slate-200/50">
-                          <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><Building2 className="w-4 h-4" /> 🏢 Общи контакти</h4>
-                          <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-6">
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                              <div className="flex-1">
-                                <div className="text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">Уебсайт</div>
-                                {client.website ? (
-                                  <a href={client.website.startsWith('http') ? client.website : `https://${client.website}`} target="_blank" className="text-sm font-black text-indigo-600 hover:underline flex items-center gap-2">
-                                    <Globe className="w-4 h-4" /> {client.website}
-                                  </a>
-                                ) : <span className="text-sm font-bold text-slate-300">Няма данни</span>}
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">Телефони</div>
-                                <div className="flex flex-wrap gap-2">
-                                  {client.contacts?.general_contacts.phones.length ? client.contacts.general_contacts.phones.map((ph, pi) => (
-                                    <span key={pi} className="px-2 py-1 bg-slate-50 border border-slate-100 rounded text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                                      <Phone className="w-3 h-3 text-slate-400" /> {ph}
-                                    </span>
-                                  )) : <span className="text-sm font-bold text-slate-300">Няма данни</span>}
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-wider">Имейли</div>
-                              <div className="flex flex-wrap gap-2">
-                                {client.contacts?.general_contacts.emails.length ? client.contacts.general_contacts.emails.map((em, pi) => (
-                                  <span key={pi} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs font-black text-indigo-600 select-all hover:bg-indigo-100 transition-colors flex items-center gap-2">
-                                    <Mail className="w-3 h-3" /> {em}
-                                  </span>
-                                )) : <span className="text-sm font-bold text-slate-300">Няма данни</span>}
-                              </div>
-                            </div>
-                          </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="space-y-3 bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50">
+                             <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2"><Mail className="w-4 h-4" /> Имейли</h4>
+                             <div className="flex flex-wrap gap-2">
+                               {client.contacts?.emails.length ? client.contacts.emails.map((em, pi) => (
+                                 <span key={pi} className="px-3 py-1.5 bg-white border border-emerald-100 rounded-lg text-xs font-black text-emerald-700 select-all hover:bg-emerald-50 transition-colors">
+                                   {em}
+                                 </span>
+                               )) : <span className="text-sm font-bold text-slate-300">Няма данни</span>}
+                             </div>
+                           </div>
+                           <div className="space-y-3 bg-slate-100/50 p-5 rounded-2xl border border-slate-200/50">
+                             <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><Phone className="w-4 h-4" /> Телефони</h4>
+                             <div className="flex flex-wrap gap-2">
+                               {client.contacts?.phones.length ? client.contacts.phones.map((ph, pi) => (
+                                 <span key={pi} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 select-all hover:bg-slate-50 transition-colors">
+                                   {ph}
+                                 </span>
+                               )) : <span className="text-sm font-bold text-slate-300">Няма данни</span>}
+                             </div>
+                           </div>
                         </div>
                       </div>
 

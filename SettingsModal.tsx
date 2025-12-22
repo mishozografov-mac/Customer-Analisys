@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, RotateCcw, Server, Thermometer, ScrollText, ShieldAlert, Package, Database, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, Save, RotateCcw, Server, Thermometer, ScrollText, ShieldAlert, Package, Database, CheckCircle, AlertCircle, SearchCheck } from 'lucide-react';
 import { ProductGroup } from './types';
-import { SYSTEM_CONFIG, SYSTEM_PROMPT_TEXT } from './geminiService'; 
+import { SYSTEM_CONFIG, SYSTEM_PROMPT_BASE } from './geminiService'; 
 import { SYSTEM_SHEET_URL } from './config';
 
 interface SettingsModalProps {
@@ -41,7 +41,7 @@ export default function SettingsModal({
 
   const addGroup = () => {
     const newId = Math.random().toString(36).substr(2, 9);
-    setLocalCatalog([...localCatalog, { id: newId, name: 'Ново направление', description: 'Описание на критериите...' }]);
+    setLocalCatalog([...localCatalog, { id: newId, name: 'Ново направление', description: 'Въведете пълния профил на клиента, логиката на избора и изключенията...' }]);
   };
 
   const removeGroup = (id: string) => {
@@ -98,47 +98,53 @@ export default function SettingsModal({
           {activeTab === 'products' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-slate-500">Тук дефинирате критериите, по които AI оценява фирмите.</p>
+                <p className="text-sm text-slate-500 font-medium">Дефинирайте критериите, по които AI оценява фирмите.</p>
                 <div className="flex gap-2">
-                   <button onClick={onResetCatalog} className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 rounded hover:bg-rose-100 transition-colors">
+                   <button onClick={onResetCatalog} className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors">
                       <RotateCcw className="w-3 h-3" /> Reset Default
                    </button>
-                   <button onClick={addGroup} className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-slate-800 rounded hover:bg-slate-700 transition-colors">
+                   <button onClick={addGroup} className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors">
                       <Plus className="w-3 h-3" /> Добави
                    </button>
                 </div>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {localCatalog.map((group) => (
-                  <div key={group.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                  <div key={group.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group relative">
+                    <button onClick={() => removeGroup(group.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    
                     <div className="flex gap-4 items-start">
-                      <div className="mt-2 bg-indigo-50 p-2 rounded-lg text-indigo-600">
-                        <Package className="w-5 h-5" />
+                      <div className="mt-1 bg-indigo-50 p-3 rounded-xl text-indigo-600">
+                        <Package className="w-6 h-6" />
                       </div>
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Име на категория</label>
-                          <input 
-                            value={group.name} 
-                            onChange={(e) => updateGroup(group.id, 'name', e.target.value)}
-                            className="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-indigo-500 outline-none pb-1 bg-transparent"
-                            placeholder="Напр. Офис мебели"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Критерии (Промпт инструкция)</label>
-                          <textarea 
-                            value={group.description} 
-                            onChange={(e) => updateGroup(group.id, 'description', e.target.value)}
-                            className="w-full text-sm text-slate-600 border border-slate-100 rounded-lg p-3 focus:border-indigo-500 outline-none bg-slate-50 focus:bg-white resize-none h-24 transition-all"
-                            placeholder="Опишете какво търсим..."
-                          />
+                      <div className="flex-1 space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Име на категория</label>
+                            <input 
+                              value={group.name} 
+                              onChange={(e) => updateGroup(group.id, 'name', e.target.value)}
+                              className="w-full font-black text-lg text-slate-800 border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-1 bg-transparent transition-all"
+                              placeholder="Напр. Офис мебели"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Описание и Логика (Context Prompt)</label>
+                            <textarea 
+                              value={group.description} 
+                              onChange={(e) => updateGroup(group.id, 'description', e.target.value)}
+                              className="w-full h-64 text-sm font-mono text-slate-700 border border-slate-100 rounded-xl p-4 focus:border-indigo-500 outline-none bg-slate-50 focus:bg-white resize-none transition-all leading-relaxed"
+                              placeholder="Въведете пълния профил на клиента, логиката на избора и изключенията..."
+                            />
+                            <p className="text-[10px] text-slate-400 mt-2 italic font-medium">
+                              Съвет: Опишете подробно идеалния клиент. Gemini ще използва целия този текст като инструкция за оценяване.
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <button onClick={() => removeGroup(group.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -170,7 +176,7 @@ export default function SettingsModal({
                   )}
                 </div>
                 <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                  Поставете тук <strong>Web App URL</strong> адреса от Google Apps Script deployment-а, за да активирате бутона "Запази в Таблица".
+                  Поставете тук <strong>Web App URL</strong> адреса от Google Apps Script deployment-а.
                 </p>
                 <div className="flex gap-2">
                   <input 
@@ -216,18 +222,21 @@ export default function SettingsModal({
                      <Thermometer className="w-4 h-4" /> Temperature
                    </div>
                    <div className="text-lg font-mono font-bold text-indigo-600">{SYSTEM_CONFIG.TEMPERATURE}</div>
-                   <div className="text-xs text-slate-400 mt-1">Creativity / Randomness factor</div>
+                   <div className="text-xs text-slate-400 mt-1">Creativity factor</div>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-[300px]">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                  <ScrollText className="w-4 h-4 text-slate-500" />
-                  <span className="text-xs font-bold text-slate-600 uppercase">System Instructions (Prompt)</span>
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ScrollText className="w-4 h-4 text-slate-500" />
+                    <span className="text-xs font-bold text-slate-600 uppercase">System Instructions (Static Part)</span>
+                  </div>
+                  <span className="text-[9px] font-black bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded uppercase">V3.0 Core</span>
                 </div>
                 <div className="flex-1 p-4 overflow-auto bg-[#1e1e1e]">
                   <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap leading-relaxed selection:bg-green-900">
-                    {SYSTEM_PROMPT_TEXT}
+                    {SYSTEM_PROMPT_BASE}
                   </pre>
                 </div>
               </div>
